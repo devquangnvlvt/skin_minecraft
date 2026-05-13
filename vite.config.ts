@@ -8,6 +8,7 @@ export default defineConfig({
 			input: {
 				main: "./examples/index.html",
 				offscreen: "./examples/offscreen-render.html",
+				editor: "./examples/skin-editor.html",
 			},
 		},
 	},
