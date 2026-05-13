@@ -11,4 +11,8 @@ export default defineConfig({
 			},
 		},
 	},
+	server: {
+		host: true, // Cho phép truy cập qua IP máy tính
+		port: 5173  // Bạn có thể đổi port nếu muốn
+	}
 });

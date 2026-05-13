@@ -15,7 +15,7 @@ const configurations = [
 		cape: "img/mojang_cape.png",
 	},
 	{
-		skin: "img/hatsune_miku.png",
+		skin: "img/hacksore.png",
 		cape: "img/mojang_cape.png",
 		backEquipment: "elytra",
 	},
