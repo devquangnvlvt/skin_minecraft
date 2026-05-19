@@ -305,10 +305,22 @@ function init3DGrid() {
   }
 }
 
-function get3DUVPoint(e: MouseEvent) {
+function get3DUVPoint(e: MouseEvent | PointerEvent | TouchEvent) {
+  let clientX = 0;
+  let clientY = 0;
+  if ('touches' in e) {
+    if (e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    }
+  } else {
+    clientX = (e as MouseEvent).clientX;
+    clientY = (e as MouseEvent).clientY;
+  }
+
   const rect = skinViewer.canvas.getBoundingClientRect();
-  mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-  mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
   raycaster.setFromCamera(mouse, skinViewer.camera);
   const intersects = raycaster.intersectObject(skinViewer.playerObject, true)
     .filter(hit => hit.object.name !== "partGrid");
@@ -363,6 +375,36 @@ function initializeControls(): void {
 	document.getElementById("btn-undo")!.addEventListener("click", undo);
 	document.getElementById("btn-redo")!.addEventListener("click", redo);
 
+	// Download Skin Event
+	document.getElementById("btn-download-skin")!.addEventListener("click", () => {
+		const dataUrl = skinCanvas.toDataURL("image/png");
+
+		// 1. Download on Web (Browser)
+		const link = document.createElement("a");
+		link.download = "minecraft_skin.png";
+		link.href = dataUrl;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+
+		// 2. Bridge to Android Kotlin if available
+		if ((window as any).AndroidApp && (window as any).AndroidApp.saveSkinToDevice) {
+			(window as any).AndroidApp.saveSkinToDevice(dataUrl);
+		}
+	});
+
+	// Expose a clean global function so Kotlin can call it directly
+	(window as any).getSkinFromApp = function() {
+		const dataUrl = skinCanvas.toDataURL("image/png");
+		if ((window as any).AndroidApp && (window as any).AndroidApp.saveSkinToDevice) {
+			(window as any).AndroidApp.saveSkinToDevice(dataUrl);
+		} else {
+			console.log("AndroidApp interface not found");
+		}
+	};
+
+
+
 	(document.getElementById("brush-size") as HTMLInputElement).addEventListener("input", e => {
 		brushSize = Number((e.target as HTMLInputElement).value);
 		document.getElementById("brush-size-val")!.textContent = brushSize + "px";
@@ -381,8 +423,9 @@ function initializeControls(): void {
 		skinViewer.playerObject.traverse(obj => { if(obj.name === "partGrid") obj.visible = (e.target as HTMLInputElement).checked; });
 	});
 
-	// Canvas mouse events
-	editorCanvas.addEventListener("mousedown", e => {
+	// Canvas pointer events (supports mouse and touch)
+	editorCanvas.addEventListener("pointerdown", e => {
+		editorCanvas.setPointerCapture(e.pointerId);
 		const r = editorCanvas.getBoundingClientRect();
 		const vr = getViewRect();
 		const x = Math.floor((e.clientX - r.left) / zoomEditor) + vr.x;
@@ -392,7 +435,7 @@ function initializeControls(): void {
 		else if (currentTool === "fill") { saveUndo(); floodFill(x,y); renderEditor(); syncTo3D(); isDrawing=false; }
 		else { saveUndo(); paintPixel(x,y); lastPixel={x,y}; renderEditor(); }
 	});
-	editorCanvas.addEventListener("mousemove", e => {
+	editorCanvas.addEventListener("pointermove", e => {
 		if (!isDrawing || !lastPixel) return;
 		const r = editorCanvas.getBoundingClientRect();
 		const vr = getViewRect();
@@ -400,7 +443,7 @@ function initializeControls(): void {
 		const y = Math.floor((e.clientY - r.top) / zoomEditor) + vr.y;
 		if (lastPixel.x !== x || lastPixel.y !== y) { paintPixel(x,y); lastPixel={x,y}; renderEditor(); }
 	});
-	window.addEventListener("mouseup", () => { if(isDrawing) { isDrawing=false; syncTo3D(); } lastPixel=null; });
+	window.addEventListener("pointerup", () => { if(isDrawing) { isDrawing=false; syncTo3D(); } lastPixel=null; });
 
 	// Original Controls
 	const canvasWidth = document.getElementById("canvas_width") as HTMLInputElement;
@@ -490,12 +533,12 @@ function initializeControls(): void {
 
 function initializeViewer(): void {
 	const skinContainer = document.getElementById("skin_container") as HTMLCanvasElement;
-	skinViewer = new skinview3d.SkinViewer({ canvas: skinContainer, width: 300, height: 300 });
+	skinViewer = new skinview3d.SkinViewer({ canvas: skinContainer, width: 600, height: 600 });
 	skinViewer.zoom = 0.9;
 
 	// 3D Painting Events
 	let is3DPainting = false;
-	skinContainer.addEventListener("mousedown", e => {
+	skinContainer.addEventListener("pointerdown", e => {
 		const point = get3DUVPoint(e);
 		if (point) {
 			skinViewer.controls.enabled = false; is3DPainting = true;
@@ -503,7 +546,7 @@ function initializeViewer(): void {
 			else { saveUndo(); paintPixel(point.x, point.y); renderEditor(); syncTo3D(); }
 		}
 	});
-	skinContainer.addEventListener("mousemove", e => {
+	skinContainer.addEventListener("pointermove", e => {
 		const point = get3DUVPoint(e);
 		if (hoverHighlight) {
 			if (point) {
@@ -514,7 +557,7 @@ function initializeViewer(): void {
 		}
 		if (is3DPainting && point) { paintPixel(point.x, point.y); renderEditor(); syncTo3D(); }
 	});
-	window.addEventListener("mouseup", () => { is3DPainting = false; skinViewer.controls.enabled = true; });
+	window.addEventListener("pointerup", () => { is3DPainting = false; skinViewer.controls.enabled = true; });
 
 	// Highlight mesh
 	const highlightGeo = new THREE.PlaneGeometry(1, 1);
@@ -534,3 +577,44 @@ function initializeViewer(): void {
 
 initializeViewer();
 initializeControls();
+
+// ─── Android WebView Bridge API ────────────────────────────────────────────────
+// skin: url image
+(window as any).updateSkinFromApp = function(urlOrBase64: string) {
+	const skinModel = document.getElementById("skin_model") as HTMLSelectElement;
+	skinViewer.loadSkin(urlOrBase64, {
+		model: skinModel?.value as any,
+	}).then(() => {
+		const img = new Image();
+		img.crossOrigin = "anonymous";
+		img.onload = () => {
+			skinCtx.clearRect(0,0,64,64);
+			skinCtx.drawImage(img,0,0,64,64);
+			undoStack = [];
+			saveUndo();
+			renderEditor();
+		};
+		img.src = urlOrBase64;
+	});
+};
+
+// background: url image
+(window as any).updateBackgroundFromApp = function(colorOrUrl: string) {
+	if (colorOrUrl.startsWith("#") || colorOrUrl.startsWith("rgb")) {
+		skinViewer.background = colorOrUrl;
+	} else {
+		skinViewer.loadPanorama(colorOrUrl);
+	}
+};
+
+// animation: "idle", "walk", "run", "fly", "wave", "crouch", "hit", "swim", "none"
+(window as any).updateAnimationFromApp = function(animationName: string) {
+	// Kiểm tra nếu tên animation không có trong danh sách hoặc truyền "none" thì tắt animation
+	if (animationName === "none" || !availableAnimations[animationName]) {
+		skinViewer.animation = null;
+	} else {
+		skinViewer.animation = availableAnimations[animationName];
+		// Thiết lập tốc độ mặc định là 1.0 (bạn có thể tuỳ chỉnh nếu muốn truyền thêm speed)
+		skinViewer.animation.speed = 1.0; 
+	}
+};
