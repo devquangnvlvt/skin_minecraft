@@ -533,8 +533,28 @@ function initializeControls(): void {
 
 function initializeViewer(): void {
 	const skinContainer = document.getElementById("skin_container") as HTMLCanvasElement;
-	skinViewer = new skinview3d.SkinViewer({ canvas: skinContainer, width: 600, height: 600 });
+	
+	// Lấy kích thước thực tế của khung chứa (parent)
+	const parentElement = skinContainer.parentElement || document.body;
+	const initialWidth = parentElement.clientWidth || window.innerWidth;
+	const initialHeight = parentElement.clientHeight || 500;
+
+	skinViewer = new skinview3d.SkinViewer({ 
+		canvas: skinContainer, 
+		width: initialWidth, 
+		height: initialHeight 
+	});
 	skinViewer.zoom = 0.9;
+
+	// Tự động thay đổi kích thước canvas 3D theo tỉ lệ màn hình/thiết bị
+	const resizeViewer = () => {
+		const width = parentElement.clientWidth || window.innerWidth;
+		const height = parentElement.clientHeight || 500;
+		skinViewer.width = width;
+		skinViewer.height = height;
+	};
+	window.addEventListener("resize", resizeViewer);
+
 
 	// 3D Painting Events
 	let is3DPainting = false;
