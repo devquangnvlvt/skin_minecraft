@@ -13,152 +13,20 @@
 			gap: 20px;
 			min-height: 100vh;
 			box-sizing: border-box;
-			background: #111;
-			color: #eee;
-			font-family: 'Inter', sans-serif;
-		}
-
-		#canvas_warp {
-			width: 800px;
-			position: sticky;
-			top: 20px;
-			align-self: flex-start;
-			padding: 10px;
 		}
 
 		#skin_container {
-			width: 100%;
-			height: 100vh;
-			background: #1a1a2e;
-			border-radius: 12px;
-			box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+			width: 400px;
+			height: 600px;
+			position: sticky;
+			top: 20px;
+			align-self: flex-start;
 		}
 
 		.controls {
 			flex: 1;
 			overflow-y: auto;
-			padding: 20px;
-			padding-bottom: 80px;
-		}
-
-		.control-section {
-			margin-bottom: 20px;
-			padding: 15px;
-			background: #1e1e2e;
-			border-radius: 10px;
-			border: 1px solid #333;
-		}
-
-		.control-section h1 {
-			margin-top: 0;
-			font-size: 1.1em;
-			color: #4ade80;
-			border-bottom: 1px solid #333;
-			padding-bottom: 8px;
-			margin-bottom: 12px;
-		}
-
-		.control {
-			margin: 8px 0;
-			display: block;
-		}
-
-		input[type="number"],
-		input[type="text"],
-		select {
-			background: #2a2a3e;
-			border: 1px solid #444;
-			color: white;
-			padding: 4px 8px;
-			border-radius: 4px;
-		}
-
-		/* Editor Styles */
-		.tool-grid {
-			display: flex;
-			gap: 8px;
-			margin-bottom: 12px;
-		}
-
-		.tool-btn {
-			width: 40px;
-			height: 40px;
-			background: #2a2a3e;
-			border: 1px solid #444;
-			border-radius: 8px;
-			color: #888;
-			cursor: pointer;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			transition: all 0.2s;
-		}
-
-		.tool-btn:hover {
-			background: #3a3a4e;
-			color: #fff;
-		}
-
-		.tool-btn.active {
-			background: #4ade80;
-			color: #111;
-			border-color: #4ade80;
-		}
-
-		.palette-grid {
-			display: grid;
-			grid-template-columns: repeat(8, 1fr);
-			gap: 4px;
-			margin-bottom: 10px;
-		}
-
-		.palette-swatch {
-			width: 100%;
-			aspect-ratio: 1;
-			border-radius: 4px;
-			cursor: pointer;
-			border: 1px solid rgba(255, 255, 255, 0.1);
-		}
-
-		.editor-canvas-area {
-			position: relative;
-			background: #000;
-			border: 1px solid #444;
-			border-radius: 8px;
-			overflow: hidden;
-			margin-top: 10px;
-			image-rendering: pixelated;
-		}
-
-		#editor-canvas,
-		#grid-canvas,
-		#cursor-canvas {
-			position: absolute;
-			top: 0;
-			left: 0;
-		}
-
-		.uv-tabs {
-			display: flex;
-			flex-wrap: wrap;
-			gap: 4px;
-			margin-bottom: 8px;
-		}
-
-		.uv-tab {
-			padding: 4px 8px;
-			background: #2a2a3e;
-			border: 1px solid #444;
-			border-radius: 4px;
-			color: #aaa;
-			font-size: 0.8em;
-			cursor: pointer;
-		}
-
-		.uv-tab.active {
-			background: #4ade80;
-			color: #111;
-			border-color: #4ade80;
+			padding-right: 20px;
 		}
 
 		@media (max-width: 1024px) {
@@ -166,14 +34,51 @@
 				flex-direction: column;
 			}
 
+			#skin_container {
+				width: 100%;
+				height: 400px;
+				top: 0;
+			}
+
+			.controls {
+				padding-right: 0;
+			}
+
 			#canvas_warp {
 				width: 100%;
-				position: relative;
+				top: 0px;
+				background: rgba(255, 255, 255, 0.6);
+				position: sticky;
+				backdrop-filter: blur(10px);
+				padding-bottom: 10px;
 			}
 		}
 
-		.hidden {
-			display: none;
+		.control-section {
+			margin-bottom: 20px;
+			padding: 15px;
+			background: #f5f5f5;
+			border-radius: 8px;
+		}
+
+		.control-section h1 {
+			margin-top: 0;
+			font-size: 1.2em;
+		}
+
+		.control {
+			margin: 5px 0;
+		}
+
+		footer {
+			position: fixed;
+			bottom: 0;
+			left: 0;
+			right: 0;
+			background: white;
+			padding: 10px 20px;
+			text-align: center;
+			border-top: 1px solid #eee;
 		}
 	</style>
 </head>
@@ -181,59 +86,9 @@
 <body>
 	<div id="canvas_warp">
 		<canvas id="skin_container"></canvas>
-
-		<!-- 2D Editor integrated below 3D -->
-		<div class="control-section" style="margin-top: 20px;">
-			<h1>2D Skin Editor</h1>
-			<div class="uv-tabs">
-				<button class="uv-tab " data-part="head">Head</button>
-				<button class="uv-tab" data-part="body">Body</button>
-				<button class="uv-tab" data-part="rightArm">R.Arm</button>
-				<button class="uv-tab" data-part="leftArm">L.Arm</button>
-				<button class="uv-tab" data-part="rightLeg">R.Leg</button>
-				<button class="uv-tab" data-part="leftLeg">L.Leg</button>
-				<button class="uv-tab active" data-part="full">Full</button>
-			</div>
-			<div class="editor-canvas-area" id="canvas-wrap" style="height: 300px;">
-				<canvas id="editor-canvas"></canvas>
-				<canvas id="grid-canvas" style="pointer-events:none;"></canvas>
-				<canvas id="cursor-canvas" style="pointer-events:none;"></canvas>
-			</div>
-			<div style="display: flex; gap: 10px; margin-top: 8px; align-items: center;">
-				<button id="btn-zoom-out" style="width:30px;">-</button>
-				<span id="zoom-label" style="font-size:0.9em;">8x</span>
-				<button id="btn-zoom-in" style="width:30px;">+</button>
-				<div style="flex:1"></div>
-				<button id="btn-undo">↩</button>
-				<button id="btn-redo">↪</button>
-			</div>
-		</div>
 	</div>
-
 	<div class="controls">
-		<div class="control-section">
-			<h1>Editor Tools</h1>
-			<div class="tool-grid">
-				<button class="tool-btn active" data-tool="pencil" title="Pencil">✎</button>
-				<button class="tool-btn" data-tool="eraser" title="Eraser">⌫</button>
-				<button class="tool-btn" data-tool="fill" title="Fill">🪣</button>
-				<button class="tool-btn" data-tool="eyedropper" title="Picker">🧪</button>
-			</div>
-			<div class="control">
-				<label>Brush: <input type="range" id="brush-size" min="1" max="8" value="1" style="width:100px;" />
-					<span id="brush-size-val">1px</span></label>
-			</div>
-			<div class="control">
-				<label>Color: <input type="color" id="color-picker" value="#3b82f6" /> <input type="text" id="color-hex"
-						value="#3b82f6" size="7" /></label>
-			</div>
-			<div class="palette-grid" id="palette-grid"></div>
-			<button id="btn-add-palette" class="control">Add to Palette</button>
-			<label class="control"><input type="checkbox" id="toggle-grid" checked /> Show 2D Grid</label>
-			<label class="control"><input type="checkbox" id="toggle-3d-grid" /> Show 3D Grid</label>
-		</div>
-
-		<button id="reset_all" type="button" class="control">Reset Viewer</button>
+		<button id="reset_all" type="button" class="control">Reset All</button>
 
 		<div class="control-section">
 			<h1>Viewport</h1>
@@ -368,7 +223,6 @@
 						<option value="img/ironman_hd.png"></option>
 						<option value="img/sethbling.png"></option>
 						<option value="img/deadmau5.png"></option>
-						<option value="img/demo.png"></option>
 					</datalist>
 					<input id="skin_url_upload" type="file" class="hidden" accept="image/*" />
 					<button id="skin_url_unset" type="button" class="control hidden">Unset</button>
@@ -443,7 +297,6 @@
 					<select id="background_type" value="panorama">
 						<option value="color">Solid Color</option>
 						<option value="panorama">Panorama</option>
-						<option value="zjhr2s">zjhr2s</option>
 					</select>
 				</label>
 			</div>
@@ -496,7 +349,21 @@
 
 	<script type="module" src="./main.ts"></script>
 
-
+	<script type="module" src="https://unpkg.com/stats.js@0.17.0/src/Stats.js"
+		integrity="sha384-W71K+d2HbqXqQWSj3Vj4RDsIVvIV7lR8O6RArKAiqB39ntwLci0W08qOn4Z1n8sM" crossorigin="anonymous"
+		async></script>
+	<script type="module" async>
+		import Stats from "https://unpkg.com/stats.js@0.17.0/src/Stats.js";
+		const stats = new Stats();
+		stats.dom.style.left = "";
+		stats.dom.style.right = "0";
+		document.body.appendChild(stats.dom);
+		function loop() {
+			stats.update();
+			requestAnimationFrame(loop);
+		}
+		requestAnimationFrame(loop);
+	</script>
 </body>
 
 </html>

@@ -1,19 +1,27 @@
 import { defineConfig } from "vite";
+import { resolve } from "path";
 
 export default defineConfig({
+	// Sử dụng đường dẫn tương đối để chạy được trên WebView (file:///android_asset/...)
 	base: "./",
+	
+	// Thư mục chứa các file ví dụ
 	root: "examples",
+	
 	build: {
+		// Xuất file build ra thư mục dist ở gốc dự án để dễ copy sang Android
+		outDir: "../dist",
+		emptyOutDir: true,
 		rollupOptions: {
 			input: {
-				main: "./examples/index.html",
-				offscreen: "./examples/offscreen-render.html",
-				editor: "./examples/skin-editor.html",
+				main: resolve(__dirname, "examples/index.html"),
+				offscreen: resolve(__dirname, "examples/offscreen-render.html"),
+				editor: resolve(__dirname, "examples/skin-editor.html"),
 			},
 		},
 	},
 	server: {
-		host: true, // Cho phép truy cập qua IP máy tính
-		port: 5173  // Bạn có thể đổi port nếu muốn
+		host: true,
+		port: 5173
 	}
 });
